@@ -11,7 +11,10 @@ import retrofit2.http.Query;
 
 public interface MemeService {
 
-  @GET("/user/repos") Call<ModelResponse> getRespone (@Query("api_key") String apiKey, @Query("limit") int limit, @Query("rating") String rating);
+    String endPoint = "v1/gifs/trending";
+
+    @GET(endPoint)
+    Call<ModelResponse> getResponse(@Query("api_key") String apiKey, @Query("limit") int limit, @Query("rating") String rating);
 
 }
 

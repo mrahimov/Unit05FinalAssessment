@@ -1,12 +1,18 @@
 package productions.darthplagueis.giphyview.adapter;
 
-import android.content.Context;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import productions.darthplagueis.giphyview.R;
+import productions.darthplagueis.giphyview.database.GiphyGif;
+import productions.darthplagueis.giphyview.model.datadetails.GiphyData;
+import productions.darthplagueis.giphyview.util.DiffUtility;
 import productions.darthplagueis.giphyview.view.GiphyViewHolder;
 
 /**
@@ -15,11 +21,10 @@ import productions.darthplagueis.giphyview.view.GiphyViewHolder;
 
 public class GiphyAdapter extends RecyclerView.Adapter<GiphyViewHolder> {
 
-    List<GiphyData> giphyDataList;
+    private List<GiphyGif> giphyDataList;
 
-    public GiphyAdapter(List<GiphyData> giphyDataList) {
-
-        this.giphyDataList = giphyDataList;
+    public GiphyAdapter() {
+        giphyDataList = new ArrayList<>();
     }
 
     @Override
@@ -30,12 +35,30 @@ public class GiphyAdapter extends RecyclerView.Adapter<GiphyViewHolder> {
 
     @Override
     public void onBindViewHolder(GiphyViewHolder holder, int position) {
-        GiphyData giphyData = giphyDataList.get(position);
-        holder.onBind(giphyData);
+        holder.onBind(giphyDataList.get(position));
     }
 
     @Override
     public int getItemCount() {
         return giphyDataList.size();
+    }
+
+    public void passListToAdapter(List<GiphyGif> newList) {
+        giphyDataList.addAll(newList);
+        notifyItemRangeInserted(getItemCount(), giphyDataList.size() - 1);
+        updateWithDifference(giphyDataList, newList);
+    }
+
+    public void removeGif(int position) {
+        giphyDataList.remove(position);
+        notifyItemRemoved(position);
+    }
+
+    private void updateWithDifference(List<GiphyGif> oldList, List<GiphyGif> newList) {
+        DiffUtility diffUtility = new DiffUtility(oldList, newList);
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffUtility);
+        giphyDataList.clear();
+        giphyDataList.addAll(newList);
+        diffResult.dispatchUpdatesTo(this);
     }
 }
