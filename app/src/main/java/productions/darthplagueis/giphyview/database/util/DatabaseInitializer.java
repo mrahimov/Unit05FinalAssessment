@@ -16,6 +16,7 @@ import productions.darthplagueis.giphyview.model.datadetails.GiphyData;
 public class DatabaseInitializer {
 
     private static final String TAG = "DATABASE_INITIALIZER";
+    private static AsyncResponse asyncResponse;
 
     public static void populateAsync(@NonNull final GifDatabase database, @NonNull final List<GiphyData> dataList) {
         PopulateDatabase task = new PopulateDatabase(database, dataList);
@@ -30,6 +31,10 @@ public class DatabaseInitializer {
     public static void removeAllFromDb(@NonNull final GifDatabase database) {
         RemoveAllGifs task = new RemoveAllGifs(database);
         task.execute();
+    }
+
+    public static void setAsyncResponse(AsyncResponse asyncResponse) {
+        DatabaseInitializer.asyncResponse = asyncResponse;
     }
 
     private static void dataListInput(GifDatabase database, List<GiphyData> dataList) {
@@ -70,6 +75,11 @@ public class DatabaseInitializer {
             dataListInput(database, dataList);
             return null;
         }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            asyncResponse.onPostExecute();
+        }
     }
 
     private static class RemoveSpecificGif extends AsyncTask<Void, Void, Void> {
@@ -103,4 +113,9 @@ public class DatabaseInitializer {
             return null;
         }
     }
+
+    public interface AsyncResponse {
+        void onPostExecute();
+    }
+
 }

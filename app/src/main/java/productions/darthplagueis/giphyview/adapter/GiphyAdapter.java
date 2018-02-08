@@ -46,7 +46,6 @@ public class GiphyAdapter extends RecyclerView.Adapter<GiphyViewHolder> {
     public void passListToAdapter(List<GiphyGif> newList) {
         giphyDataList.addAll(newList);
         notifyItemRangeInserted(getItemCount(), giphyDataList.size() - 1);
-        updateWithDifference(giphyDataList, newList);
     }
 
     public void removeGif(int position) {
@@ -54,8 +53,8 @@ public class GiphyAdapter extends RecyclerView.Adapter<GiphyViewHolder> {
         notifyItemRemoved(position);
     }
 
-    private void updateWithDifference(List<GiphyGif> oldList, List<GiphyGif> newList) {
-        DiffUtility diffUtility = new DiffUtility(oldList, newList);
+    public void updateWithDifference(List<GiphyGif> newList) {
+        DiffUtility diffUtility = new DiffUtility(giphyDataList, newList);
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffUtility);
         giphyDataList.clear();
         giphyDataList.addAll(newList);
