@@ -15,7 +15,6 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static android.content.ContentValues.TAG;
 import static productions.darthplagueis.giphyview.BuildConfig.API_KEY;
 
 /**
@@ -23,6 +22,8 @@ import static productions.darthplagueis.giphyview.BuildConfig.API_KEY;
  */
 
 public class GiphyRetrofit {
+
+    private static final String TAG = GiphyRetrofit.class.getSimpleName();
 
     private Retrofit retrofit;
 
@@ -47,7 +48,7 @@ public class GiphyRetrofit {
         return retrofit.create(MemeService.class);
     }
 
-    public static void makeApiCall(final Context context) {
+    public static void makeApiCall(final Context context, final boolean isJobService) {
         MemeService memeService = GiphyRetrofit.getInstance().getMemeService();
         Call<ModelResponse> call = memeService.getResponse(API_KEY, 30, "R");
         call.enqueue(new Callback<ModelResponse>() {
@@ -56,7 +57,11 @@ public class GiphyRetrofit {
                 if (response.isSuccessful()) {
                     ModelResponse modelResponse = response.body();
                     List<GiphyData> dataList = modelResponse.getData();
-                    DatabaseInitializer.populateAsync(GifDatabase.getDatabase(context), dataList);
+                    if (isJobService) {
+                        DatabaseInitializer.populateAsync(GifDatabase.getDatabase(context), dataList);
+                    } else {
+                        DatabaseInitializer.populateViewAsync(GifDatabase.getDatabase(context), dataList);
+                    }
                     Log.d(TAG, "onResponse: listSize = " + dataList.size());
                     Log.d(TAG, "onResponse: testUrl = " + dataList.get(0).getUrl());
                 }
