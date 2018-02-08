@@ -78,7 +78,7 @@ public class DatabaseInitializer {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            asyncResponse.onPostExecute();
+            asyncResponse.onPostExecute(true);
         }
     }
 
@@ -115,7 +115,7 @@ public class DatabaseInitializer {
     }
 
     public interface AsyncResponse {
-        void onPostExecute();
+        void onPostExecute(boolean success);
     }
 
 }

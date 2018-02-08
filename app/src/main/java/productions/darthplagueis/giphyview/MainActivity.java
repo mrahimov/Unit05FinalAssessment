@@ -1,7 +1,10 @@
 package productions.darthplagueis.giphyview;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.ComponentName;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -30,6 +33,7 @@ import productions.darthplagueis.giphyview.model.ModelResponse;
 import productions.darthplagueis.giphyview.network.GiphyRetrofit;
 import productions.darthplagueis.giphyview.network.MemeService;
 import productions.darthplagueis.giphyview.network.Presenter;
+import productions.darthplagueis.giphyview.util.GiphyJobService;
 import productions.darthplagueis.giphyview.view.GiphyViewHolder;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -66,11 +70,12 @@ public class MainActivity extends AppCompatActivity {
 
         gifViewModel = ViewModelProviders.of(this).get(GifViewModel.class);
 
-        onPostExecuteListener();
+        createJobService();
+        //onPostExecuteListener();
         setSwipeListener();
 
         if (isNetworkAvailable()) {
-            makeApiCall();
+            //makeApiCall();
         } else {
             Toast.makeText(MainActivity.this, "Please check your internet connection" +
                     " and try again", Toast.LENGTH_LONG).show();
@@ -79,15 +84,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void onPostExecuteListener() {
-        DatabaseInitializer.setAsyncResponse(new DatabaseInitializer.AsyncResponse() {
-            @Override
-            public void onPostExecute() {
-                updateWithDiff = true;
-                showGifsInUi();
-            }
-        });
-    }
+//    private void onPostExecuteListener() {
+//        DatabaseInitializer.setAsyncResponse(new DatabaseInitializer.AsyncResponse() {
+//            @Override
+//            public void onPostExecute() {
+//                updateWithDiff = true;
+//                showGifsInUi();
+//            }
+//        });
+//    }
 
     private void showGifsInUi() {
         gifViewModel.initializeDb();
@@ -153,6 +158,16 @@ public class MainActivity extends AppCompatActivity {
                 t.printStackTrace();
             }
         });
+    }
+
+    public void createJobService(){
+        long ONE_DAY_INTERVAL = 24 * 60 * 60 * 1000L;
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(new JobInfo.Builder(1, new ComponentName(this, GiphyJobService.class))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPeriodic(ONE_DAY_INTERVAL)
+                .build());
+
     }
 }
 
