@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GiphyView</string>
+    <string name="view_in_browser">View in Browser</string>
 </resources>

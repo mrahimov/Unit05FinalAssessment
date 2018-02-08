@@ -11,10 +11,11 @@ public class GiphyData {
     private ModelImages images;
     private String title;
 
-    public GiphyData(String url, ModelUser user, ModelImages images) {
+    public GiphyData(String url, ModelUser user, ModelImages images, String title) {
         this.url = url;
         this.user = user;
         this.images = images;
+        this.title = title;
     }
 
     public String getUrl() {
