@@ -12,11 +12,11 @@ import android.content.Context;
 @Database(entities = {GiphyGif.class}, version = 2)
 public abstract class GifDatabase extends RoomDatabase {
 
-    private static GifDatabase INSTANCE;
+    private static volatile GifDatabase INSTANCE;
 
     public abstract GiphyGifDao giphyGifDao();
 
-    public static GifDatabase getDatabase(Context context) {
+    public static synchronized GifDatabase getDatabase(Context context) {
         if (INSTANCE == null) {
             String DATABASE_NAME = "gif-database";
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(), GifDatabase.class, DATABASE_NAME)
@@ -25,7 +25,6 @@ public abstract class GifDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-
 
     public static void destroyInstance() {
         INSTANCE = null;

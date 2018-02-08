@@ -6,6 +6,7 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
@@ -46,20 +47,22 @@ import static productions.darthplagueis.giphyview.BuildConfig.API_KEY;
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MAIN_ACTIVITY";
+    private SharedPreferences preferences;
     private RecyclerView giphyRecyclerView;
     private GiphyAdapter adapter;
     private GifViewModel gifViewModel;
+    private boolean hasExecutedInitialCall;
     private boolean updateWithDiff;
-
-    @Inject
-    Presenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        DatabaseInitializer.removeAllFromDb(GifDatabase.getDatabase(getApplicationContext()));
+        preferences = getSharedPreferences("shared_prefs", Context.MODE_PRIVATE);
+        hasExecutedInitialCall = preferences.getBoolean("has_executed", false);
+
+        //DatabaseInitializer.removeAllFromDb(GifDatabase.getDatabase(getApplicationContext()));
 
         giphyRecyclerView = findViewById(R.id.giphy_recyclerview);
         adapter = new GiphyAdapter();
@@ -70,29 +73,42 @@ public class MainActivity extends AppCompatActivity {
 
         gifViewModel = ViewModelProviders.of(this).get(GifViewModel.class);
 
-        createJobService();
-        //onPostExecuteListener();
-        setSwipeListener();
-
-        if (isNetworkAvailable()) {
-            //makeApiCall();
+        if (!hasExecutedInitialCall) {
+            if (isNetworkAvailable()) {
+                createJobService();
+                GiphyRetrofit.makeApiCall(getApplicationContext(), false);
+            } else {
+                Toast.makeText(MainActivity.this, "Please check your internet connection" +
+                        " and try again", Toast.LENGTH_LONG).show();
+            }
         } else {
-            Toast.makeText(MainActivity.this, "Please check your internet connection" +
-                    " and try again", Toast.LENGTH_LONG).show();
+            showGifsInUi();
         }
 
-
+        onPostExecuteListener();
+        setSwipeListener();
     }
 
-//    private void onPostExecuteListener() {
-//        DatabaseInitializer.setAsyncResponse(new DatabaseInitializer.AsyncResponse() {
-//            @Override
-//            public void onPostExecute() {
-//                updateWithDiff = true;
-//                showGifsInUi();
-//            }
-//        });
-//    }
+    private void createJobService(){
+        long ONE_DAY_INTERVAL = 24 * 60 * 60 * 1000L;
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(new JobInfo.Builder(1, new ComponentName(this, GiphyJobService.class))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPeriodic(ONE_DAY_INTERVAL)
+                .build());
+    }
+
+    private void onPostExecuteListener() {
+        DatabaseInitializer.setAdapterResponse(new DatabaseInitializer.AdapterResponse() {
+            @Override
+            public void onPostExecute() {
+                hasExecutedInitialCall = true;
+                preferences.edit().putBoolean("has_executed", hasExecutedInitialCall).apply();
+                updateWithDiff = true;
+                showGifsInUi();
+            }
+        });
+    }
 
     private void showGifsInUi() {
         gifViewModel.initializeDb();
@@ -136,38 +152,6 @@ public class MainActivity extends AppCompatActivity {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
-    }
-
-    private void makeApiCall() {
-        MemeService memeService = GiphyRetrofit.getInstance().getMemeService();
-        Call<ModelResponse> call = memeService.getResponse(API_KEY, 30, "R");
-        call.enqueue(new Callback<ModelResponse>() {
-            @Override
-            public void onResponse(Call<ModelResponse> call, Response<ModelResponse> response) {
-                if (response.isSuccessful()) {
-                    ModelResponse modelResponse = response.body();
-                    List<GiphyData> dataList = modelResponse.getData();
-                    DatabaseInitializer.populateAsync(GifDatabase.getDatabase(getApplicationContext()), dataList);
-                    Log.d(TAG, "onResponse: listSize = " + dataList.size());
-                    Log.d(TAG, "onResponse: testUrl = " + dataList.get(0).getUrl());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ModelResponse> call, Throwable t) {
-                t.printStackTrace();
-            }
-        });
-    }
-
-    public void createJobService(){
-        long ONE_DAY_INTERVAL = 24 * 60 * 60 * 1000L;
-        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        jobScheduler.schedule(new JobInfo.Builder(1, new ComponentName(this, GiphyJobService.class))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setPeriodic(ONE_DAY_INTERVAL)
-                .build());
-
     }
 }
 

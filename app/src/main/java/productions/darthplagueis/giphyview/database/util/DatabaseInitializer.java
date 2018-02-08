@@ -16,10 +16,16 @@ import productions.darthplagueis.giphyview.model.datadetails.GiphyData;
 public class DatabaseInitializer {
 
     private static final String TAG = "DATABASE_INITIALIZER";
-    private static AsyncResponse asyncResponse;
+    private static JobServiceResponse jobServiceResponse;
+    private static AdapterResponse adapterResponse;
 
     public static void populateAsync(@NonNull final GifDatabase database, @NonNull final List<GiphyData> dataList) {
         PopulateDatabase task = new PopulateDatabase(database, dataList);
+        task.execute();
+    }
+
+    public static void populateViewAsync(@NonNull final GifDatabase database, @NonNull final List<GiphyData> dataList) {
+        PopulateView task = new PopulateView(database, dataList);
         task.execute();
     }
 
@@ -33,39 +39,73 @@ public class DatabaseInitializer {
         task.execute();
     }
 
-    public static void setAsyncResponse(AsyncResponse asyncResponse) {
-        DatabaseInitializer.asyncResponse = asyncResponse;
+    public static void setJobServiceResponse(JobServiceResponse jobServiceResponse) {
+        DatabaseInitializer.jobServiceResponse = jobServiceResponse;
     }
 
-    private static void dataListInput(GifDatabase database, List<GiphyData> dataList) {
-        for (GiphyData gif : dataList) {
-            GiphyGif giphyGif = new GiphyGif();
-
-            giphyGif.setUrl(gif.getUrl());
-            giphyGif.setTitle(gif.getTitle());
-            giphyGif.setHeightStill(gif.getImages().getFixed_height_still().getUrl());
-            giphyGif.setFixedStillWidth(gif.getImages().getFixed_height_still().getWidth());
-            giphyGif.setFixedStillHeight(gif.getImages().getFixed_height_still().getHeight());
-            giphyGif.setHeightSmallStill(gif.getImages().getFixed_height_small_still().getUrl());
-            giphyGif.setFixedSmallStillWidth(gif.getImages().getFixed_height_small_still().getWidth());
-            giphyGif.setFixedSmallStillHeight(gif.getImages().getFixed_height_small_still().getHeight());
-            giphyGif.setPreviewGif(gif.getImages().getPreview_gif().getUrl());
-
-            addGifToDb(database, giphyGif);
-        }
-    }
-
-    private static GiphyGif addGifToDb(GifDatabase database, GiphyGif gif) {
-        database.giphyGifDao().insertGifs(gif);
-        return gif;
+    public static void setAdapterResponse(AdapterResponse adapterResponse) {
+        DatabaseInitializer.adapterResponse = adapterResponse;
     }
 
     private static class PopulateDatabase extends AsyncTask<Void, Void, Void> {
 
         private GifDatabase database;
         private List<GiphyData> dataList;
+        private GiphyGif notificationGif;
 
         PopulateDatabase(GifDatabase database, List<GiphyData> dataList) {
+            this.database = database;
+            this.dataList = dataList;
+            notificationGif = new GiphyGif();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            dataListInput(database, dataList);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            jobServiceResponse.onPostExecute(true, notificationGif);
+        }
+
+        private void dataListInput(GifDatabase database, List<GiphyData> dataList) {
+            for (int i = 0; i < dataList.size(); i++) {
+                GiphyGif giphyGif = new GiphyGif();
+
+                giphyGif.setUrl(dataList.get(i).getUrl());
+                giphyGif.setTitle(dataList.get(i).getTitle());
+                giphyGif.setHeightStill(dataList.get(i).getImages().getFixed_height_still().getUrl());
+                giphyGif.setFixedStillWidth(dataList.get(i).getImages().getFixed_height_still().getWidth());
+                giphyGif.setFixedStillHeight(dataList.get(i).getImages().getFixed_height_still().getHeight());
+                giphyGif.setHeightSmallStill(dataList.get(i).getImages().getFixed_height_small_still().getUrl());
+                giphyGif.setFixedSmallStillWidth(dataList.get(i).getImages().getFixed_height_small_still().getWidth());
+                giphyGif.setFixedSmallStillHeight(dataList.get(i).getImages().getFixed_height_small_still().getHeight());
+                giphyGif.setPreviewGif(dataList.get(i).getImages().getPreview_gif().getUrl());
+
+                addGifToDb(database, giphyGif);
+
+                if (i == dataList.size() - 1) {
+                    notificationGif.setHeightSmallStill(dataList.get(i).getImages().getFixed_height_small_still().getUrl());
+                    notificationGif.setFixedSmallStillWidth(dataList.get(i).getImages().getFixed_height_small_still().getWidth());
+                    notificationGif.setFixedSmallStillHeight(dataList.get(i).getImages().getFixed_height_small_still().getHeight());
+                }
+            }
+        }
+
+        private GiphyGif addGifToDb(GifDatabase database, GiphyGif gif) {
+            database.giphyGifDao().insertGifs(gif);
+            return gif;
+        }
+    }
+
+    private static class PopulateView extends AsyncTask<Void, Void, Void> {
+
+        private GifDatabase database;
+        private List<GiphyData> dataList;
+
+        PopulateView(GifDatabase database, List<GiphyData> dataList) {
             this.database = database;
             this.dataList = dataList;
         }
@@ -78,7 +118,30 @@ public class DatabaseInitializer {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            asyncResponse.onPostExecute(true);
+            adapterResponse.onPostExecute();
+        }
+
+        private void dataListInput(GifDatabase database, List<GiphyData> dataList) {
+            for (GiphyData gif : dataList) {
+                GiphyGif giphyGif = new GiphyGif();
+
+                giphyGif.setUrl(gif.getUrl());
+                giphyGif.setTitle(gif.getTitle());
+                giphyGif.setHeightStill(gif.getImages().getFixed_height_still().getUrl());
+                giphyGif.setFixedStillWidth(gif.getImages().getFixed_height_still().getWidth());
+                giphyGif.setFixedStillHeight(gif.getImages().getFixed_height_still().getHeight());
+                giphyGif.setHeightSmallStill(gif.getImages().getFixed_height_small_still().getUrl());
+                giphyGif.setFixedSmallStillWidth(gif.getImages().getFixed_height_small_still().getWidth());
+                giphyGif.setFixedSmallStillHeight(gif.getImages().getFixed_height_small_still().getHeight());
+                giphyGif.setPreviewGif(gif.getImages().getPreview_gif().getUrl());
+
+                addGifToDb(database, giphyGif);
+            }
+        }
+
+        private GiphyGif addGifToDb(GifDatabase database, GiphyGif gif) {
+            database.giphyGifDao().insertGifs(gif);
+            return gif;
         }
     }
 
@@ -114,8 +177,12 @@ public class DatabaseInitializer {
         }
     }
 
-    public interface AsyncResponse {
-        void onPostExecute(boolean success);
+    public interface JobServiceResponse {
+        void onPostExecute(boolean success, GiphyGif gif);
+    }
+
+    public interface AdapterResponse {
+        void onPostExecute();
     }
 
 }

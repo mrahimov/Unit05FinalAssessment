@@ -29,18 +29,31 @@ public class GiphyAdapter extends RecyclerView.Adapter<GiphyViewHolder> {
 
     @Override
     public GiphyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View childView = LayoutInflater.from(parent.getContext()).inflate(R.layout.giphy_item_view, parent, false);
+        View childView;
+        if (viewType == 1) {
+            childView = LayoutInflater.from(parent.getContext()).inflate(R.layout.top_item_view, parent, false);
+        } else {
+            childView = LayoutInflater.from(parent.getContext()).inflate(R.layout.giphy_item_view, parent, false);
+        }
         return new GiphyViewHolder(childView);
     }
 
     @Override
     public void onBindViewHolder(GiphyViewHolder holder, int position) {
-        holder.onBind(giphyDataList.get(position));
+        if (position != 0) {
+            holder.onBind(giphyDataList.get(position));
+        }
     }
 
     @Override
     public int getItemCount() {
         return giphyDataList.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position == 0) return 1;
+        else return 2;
     }
 
     public void passListToAdapter(List<GiphyGif> newList) {
