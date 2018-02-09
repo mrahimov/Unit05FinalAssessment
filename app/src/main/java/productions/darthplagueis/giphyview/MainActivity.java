@@ -10,38 +10,25 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.widget.Toast;
 
 import java.util.List;
-
-import javax.inject.Inject;
 
 import productions.darthplagueis.giphyview.adapter.GiphyAdapter;
 import productions.darthplagueis.giphyview.database.GifDatabase;
 import productions.darthplagueis.giphyview.database.GiphyGif;
 import productions.darthplagueis.giphyview.database.util.DatabaseInitializer;
 import productions.darthplagueis.giphyview.database.util.GifViewModel;
-import productions.darthplagueis.giphyview.model.datadetails.GiphyData;
-import productions.darthplagueis.giphyview.model.ModelResponse;
 import productions.darthplagueis.giphyview.network.GiphyRetrofit;
-import productions.darthplagueis.giphyview.network.MemeService;
-import productions.darthplagueis.giphyview.network.Presenter;
 import productions.darthplagueis.giphyview.util.GiphyJobService;
 import productions.darthplagueis.giphyview.view.GiphyViewHolder;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-
-import static productions.darthplagueis.giphyview.BuildConfig.API_KEY;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -73,23 +60,26 @@ public class MainActivity extends AppCompatActivity {
 
         gifViewModel = ViewModelProviders.of(this).get(GifViewModel.class);
 
+        createJobService();
         if (!hasExecutedInitialCall) {
+            //createJobService();
             if (isNetworkAvailable()) {
-                createJobService();
                 GiphyRetrofit.makeApiCall(getApplicationContext(), false);
+                makeSnackbar("Swipe left or right to remove Gifs");
             } else {
                 Toast.makeText(MainActivity.this, "Please check your internet connection" +
                         " and try again", Toast.LENGTH_LONG).show();
             }
         } else {
             showGifsInUi();
+            makeSnackbar("Swipe left or right to remove Gifs");
         }
 
         onPostExecuteListener();
         setSwipeListener();
     }
 
-    private void createJobService(){
+    private void createJobService() {
         long ONE_DAY_INTERVAL = 24 * 60 * 60 * 1000L;
         JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         jobScheduler.schedule(new JobInfo.Builder(1, new ComponentName(this, GiphyJobService.class))
@@ -137,11 +127,19 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-                GiphyGif gif = ((GiphyViewHolder) viewHolder).getGif();
-                DatabaseInitializer.removeSpecGif(GifDatabase.getDatabase(getApplicationContext()), gif);
-                Toast.makeText(MainActivity.this, "Gif Removed", Toast.LENGTH_LONG).show();
                 int position = viewHolder.getAdapterPosition();
-                adapter.removeGif(position);
+                if (position != 0) {
+                    GiphyGif gif = ((GiphyViewHolder) viewHolder).getGif();
+                    DatabaseInitializer.removeSpecGif(GifDatabase.getDatabase(getApplicationContext()), gif);
+                    makeSnackbar("Gif Removed");
+                    adapter.removeGif(position);
+                }
+            }
+
+            @Override
+            public int getSwipeDirs(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder.getAdapterPosition() == 0) return 0;
+                return super.getSwipeDirs(recyclerView, viewHolder);
             }
         };
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemCallBack);
@@ -152,6 +150,10 @@ public class MainActivity extends AppCompatActivity {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
+    }
+
+    private void makeSnackbar(String text) {
+        Snackbar.make(findViewById(R.id.coordinator_layout), text, Snackbar.LENGTH_LONG).show();
     }
 }
 
