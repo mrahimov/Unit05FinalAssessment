@@ -17,7 +17,7 @@ public class DatabaseInitializer {
 
     private static final String TAG = "DATABASE_INITIALIZER";
     private static JobServiceResponse jobServiceResponse;
-    private static AdapterResponse adapterResponse;
+    private static CallResponse callResponse;
 
     public static void populateAsync(@NonNull final GifDatabase database, @NonNull final List<GiphyData> dataList) {
         PopulateDatabase task = new PopulateDatabase(database, dataList);
@@ -43,8 +43,8 @@ public class DatabaseInitializer {
         DatabaseInitializer.jobServiceResponse = jobServiceResponse;
     }
 
-    public static void setAdapterResponse(AdapterResponse adapterResponse) {
-        DatabaseInitializer.adapterResponse = adapterResponse;
+    public static void setCallResponse(CallResponse callResponse) {
+        DatabaseInitializer.callResponse = callResponse;
     }
 
     private static class PopulateDatabase extends AsyncTask<Void, Void, Void> {
@@ -118,7 +118,7 @@ public class DatabaseInitializer {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            adapterResponse.onPostExecute();
+            callResponse.onPostExecute();
         }
 
         private void dataListInput(GifDatabase database, List<GiphyData> dataList) {
@@ -181,7 +181,7 @@ public class DatabaseInitializer {
         void onPostExecute(boolean success, GiphyGif gif);
     }
 
-    public interface AdapterResponse {
+    public interface CallResponse {
         void onPostExecute();
     }
 

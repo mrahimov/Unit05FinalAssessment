@@ -32,7 +32,7 @@ public class DiffUtility extends DiffUtil.Callback {
 
     @Override
     public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-        return oldGifsList.get(oldItemPosition).getId() == newGifsList.get(newItemPosition).getId();
+        return oldGifsList.get(oldItemPosition).getTitle().equalsIgnoreCase(newGifsList.get(newItemPosition).getTitle());
     }
 
     @Override
